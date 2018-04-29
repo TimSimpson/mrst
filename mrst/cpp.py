@@ -6,16 +6,8 @@ import typing as t
 # In rst, you can pick whatever char you want for section headers.
 # but this list is what appeared in the docs, and is what pandoc uses when
 # converting from MarkDown, so it looks like it has to be the standard.
-HEADERS = [
-    '=',
-    '-',
-    '~',
-    '^',
-    '\'',
-    '`',
-]
-
 HEADERS_STR = '=-~^\'`'
+HEADERS = list(HEADERS_STR)
 
 
 class Line(object):
@@ -61,10 +53,12 @@ class Line(object):
         """Special }; at start of line."""
         return self.line.strip().startswith('};')
 
+    def begin_marker(self) -> bool:
+        return self.line.startswith('// ~begin-doc')
+
     def end_marker(self) -> bool:
         """Has "// end-doc" """
-        return (self.line.startswith('// -/') or
-                self.line.startswith('// end-doc'))
+        return self.line.startswith('// ~end-doc')
 
     def doc_line_with_tail(self) -> bool:
         return self.line.rstrip().endswith('-/')
@@ -125,6 +119,9 @@ class Tokenizer:
             self._m = Mode.SECTION_TEXT
             self._text: t.List[str] = []
             return Token(TokenType.SECTION_START, None, self._line_number)
+        elif l.begin_marker():
+            self._m = Mode.UNKNOWN_CODE
+            self._text: t.List[str] = []
         return None
 
     # def _case_section_header(self,

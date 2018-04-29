@@ -43,7 +43,7 @@ def test_simple_big_section_header():
             // --------------------------------------------------
             Hype adaptive_resonance(const Res & r);
 
-            // end-doc
+            // ~end-doc
         """),
         rst=textwrap.dedent("""
             Hyper Module
@@ -151,7 +151,7 @@ def test_section_header_not_necessary():
 
             void nullptr int;
 
-            // end-doc
+            // ~end-doc
         """),
         rst=textwrap.dedent("""
             check out this code baby:
@@ -159,5 +159,35 @@ def test_section_header_not_necessary():
             .. code-block:: c++
 
                 void nullptr int;
+        """).lstrip()
+    )
+
+
+def test_code_blocks_without_text():
+    check_translation(
+        section='~',
+        cpp=textwrap.dedent("""
+            // ~begin-doc
+
+            some code
+
+            // ~end-doc
+
+            more code
+
+            // ~begin-doc
+
+            even more code
+
+            // ~end-doc
+        """),
+        rst=textwrap.dedent("""
+            .. code-block:: c++
+
+                some code
+
+            .. code-block:: c++
+
+                even more code
         """).lstrip()
     )
