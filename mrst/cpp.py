@@ -27,7 +27,7 @@ class Line(object):
 
     def text(self) -> str:
         """Just returns the text."""
-        return self.line
+        return self.line.rstrip()
 
     def end_class_marker(self) -> bool:
         """Special }; at start of line."""
@@ -177,7 +177,10 @@ class Tokenizer:
             self._text = []
             return t
         else:
-            self._text.append('    {}'.format(l.text()))
+            if len(l.text()) > 0:
+                self._text.append('    {}'.format(l.text()))
+            else:
+                self._text.append('')
             return None
 
 
@@ -225,8 +228,8 @@ def translate_cpp_file(
                 raise ValueError('Section header starting at line {} was '
                                  'malformed.'.format(token.line_number))
             header_char = HEADERS[header_depth % len(HEADERS)]
-            output.append(token.text[0])
-            output.append(header_char * len(token.text[0]))
+            output.append(token.text[0].rstrip())
+            output.append(header_char * len(token.text[0].rstrip()))
             if token.type == TokenType.BIG_HEADER:
                 header_depth += 1
         elif token.type == TokenType.SECTION_TEXT:
@@ -238,7 +241,7 @@ def translate_cpp_file(
             for cl in token.text:
                 cl_lines = cl.split('\n')
                 for cl_line in cl_lines:
-                    output.append('    ' + cl_line)
+                    output.append(f'    {cl_line}'.rstrip())
 
         elif token.type == TokenType.EOF:
             header_depth -= 1
