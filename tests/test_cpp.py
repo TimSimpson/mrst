@@ -110,3 +110,40 @@ def test_section_is_obeyed():
 
         """).lstrip()
     )
+
+
+def test_section_is_obeyed():
+    check_translation(
+        section='~',
+        cpp=textwrap.dedent("""
+            // --------------------------------------------------
+            // Big Header
+            // ==================================================
+            //       Desc
+            // --------------------------------------------------
+
+            #include "blahblahblah"
+
+            // --------------------------------------------------
+            // section 2
+            // --------------------------------------------------
+            //    Desc 2
+            // -------------------------------------------------/
+        """),
+        rst=textwrap.dedent("""
+            Big Header
+            ^^^^^^^^^^
+            Desc
+
+
+            .. code-block:: c++
+
+
+                    #include "blahblahblah"
+
+            section 2
+            '''''''''
+            Desc 2
+
+        """).lstrip()
+    )
