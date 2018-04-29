@@ -108,10 +108,17 @@ The parser reads C++ code and ignores everything until it sees special comment s
 
 .. code-block:: c++
 
+    // ---------------------------------------------
+
+The important bit is that there are two slashes, a space, and then at least two hyphens.
+
+Everything after that is included in the rst file until it sees another similar line.
+
+Here's an example:
 
     // --------------------------------------------
     // Section Header
-    // --------------------------------------------
+    // ===========================================
     // This describes something important.
     // -------------------------------------------/
 
@@ -120,19 +127,85 @@ This gets translated to the following rst:
 .. code-block:: rst
 
     Section Header
-    --------------
+    ==============
     This describes something important.
 
-Note the last C++ comment is a line full of dashes ending with ``/``: that's important. It tells the translator to stop until it sees the next comment.
+Note the last C++ comment is a line full of dashes ending with ``/``: that's important. It tells the translator to stop until it sees the next comment that looks like rst.
 
-Alternatively, it's possible to make the translator scoop up actual C++ code as a snippet following a special comment if the comment ends with ``// -------`` (without the ending ``/``).
+Alternatively, it's possible to make the translator scoop up actual C++ code. There's two ways to do this.
 
-The C++ code below the comment will be taken until either:
+The first is to use the special directive ``// ~begin-code``. That will tell mrst to put all the code below as a C++ snippet in the rst file until it gets to ``// ~end-code``. For example:
 
-* the next special comment section
-* the line ``// end-doc`` appears
+.. code-block:: c++
 
-Note: if neither one of those things happens, it won't read in the snippet. If you want it to read until the end of the file, you need to put ``//end-doc`` on the last line.
+    // ~begin-code
+
+    int main() {
+        // this documents how you can have a signature for main like this
+        // on some platforms
+    }
+
+    // ~end-code
+
+becomes:
+
+.. code-block:: rst
+
+    .. code-block:: c++
+
+        int main() {
+            // this documents how you can have a signature for main like this
+            // on some platforms
+        }
+
+Instead of ``// ~end-doc`` you can also just give it a comment like described above, like this:
+
+.. code-block:: c++
+
+    // ------------------------------------------------------------------
+    // get_customer_id
+    // ------------------------------------------------------------------
+    //      Grabs a customer.
+    // ------------------------------------------------------------------
+    template<typename Customer>
+    inline int get_customer_id(Customer & c) {
+        return get_id(c);
+    }
+
+    // ------------------------------------------------------------------
+    // charge_customer
+    // ------------------------------------------------------------------
+    //      Used to charge a customer.
+    // ------------------------------------------------------------------
+    void charge_customer(int c_id, double money);
+
+becomes:
+
+.. code-block:: rst
+
+    get_customer_id
+    ---------------
+    Grabs a customer.
+
+    .. code-block:: c++
+
+        template<typename Customer>
+        inline int get_customer_id(Customer & c) {
+            return get_id(c);
+        }
+
+    charge_customer
+    ---------------
+    Used to charge a customer.
+
+    .. code-block:: c++
+
+        void charge_customer(int c_id, double money);
+
+This behavior of treating the end of the special comment block like an ``// ~end-doc`` is to make the pattern seen above easier.
+
+If you don't want to consume the code below a special comment, end it with ``// ---/`` as seen above.
+
 
 Here's an example of a class being included in rst:
 
@@ -174,7 +247,7 @@ the above turns into:
 Section headers
 ~~~~~~~~~~~~~~~
 
-When parsing C++ files it's sometimes necessary to tell the C++ to rst generator what section header the incoming dumped rst should be nested under. The expected order of the section headers can be found in the `HEADERS` var defined in cpp_rst.py.
+When parsing C++ files it's sometimes necessary to tell the C++ to rst generator what section header the incoming dumped rst should be nested under. The expected order of the section headers can be found in the `HEADERS` var defined in cpp_rst.py (note: Sphinx lets you use an arbitrary order, but you have to use the same order mrst uses in order to chnage the section headers found in C++ files).
 
 Let's say you want to the documentation in a header file to appear under an existing section header in your rst file. You'd do this:
 
