@@ -1,11 +1,12 @@
 import argparse
 import sys
+import typing as t
 
 from . import build
 from . import gen
 
 
-def main() -> None:
+def run(args: t.List[str]) -> int:
     parser = argparse.ArgumentParser('Generates Rst files')
     parser.add_argument('--source', default=None, type=str,
                         help='source directory')
@@ -13,13 +14,17 @@ def main() -> None:
                         help='destination directory for generated source')
     parser.add_argument('--generate', default=False, type=bool,
                         help='If set, generate only, don\'t call Sphinx.')
-    args = parser.parse_args()
+    p_args = parser.parse_args(args)
 
-    cfg = gen.Config(args.source, args.output)
-    if args.generate:
-        sys.exit(gen.generate(cfg))
+    cfg = gen.Config(p_args.source, p_args.output)
+    if p_args.generate:
+        return gen.generate(cfg)
     else:
-        sys.exit(build.build(cfg))
+        return build.build(cfg)
+
+
+def main() -> None:
+    exit(run(sys.argv))
 
 
 if __name__ == "__main__":
