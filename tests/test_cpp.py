@@ -139,3 +139,25 @@ def test_section_is_obeyed():
             Desc 2
         """).lstrip()
     )
+
+
+def test_section_header_not_necessary():
+    check_translation(
+        section='~',
+        cpp=textwrap.dedent("""
+            // --------------------------------------------------
+            // check out this code baby:
+            // --------------------------------------------------
+
+            void nullptr int;
+
+            // end-doc
+        """),
+        rst=textwrap.dedent("""
+            check out this code baby:
+
+            .. code-block:: c++
+
+                void nullptr int;
+        """).lstrip()
+    )
