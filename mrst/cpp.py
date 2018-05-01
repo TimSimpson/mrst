@@ -1,13 +1,19 @@
-import textwrap
 from enum import Enum
+import re
+import textwrap
 import typing as t
 
+from . import common
 
 # In rst, you can pick whatever char you want for section headers.
 # but this list is what appeared in the docs, and is what pandoc uses when
 # converting from MarkDown, so it looks like it has to be the standard.
 HEADERS_STR = '=-~^\'`'
 HEADERS = list(HEADERS_STR)
+
+SEE_FILE_RE = re.compile(common.make_include_reg('// ~see-file'))
+
+FileReader = t.Callable[..., t.Tuple[t.List[str], t.Any]]
 
 
 class Line(object):
@@ -20,7 +26,7 @@ class Line(object):
         return 'class' in self.line
 
     def starts_with_section_comment(self) -> bool:
-        return self.line.startswith('// ')
+        return self.line.startswith('// ') or self.line == '//'
 
     def starts_with_doc_line(self) -> bool:
         return self.line.startswith('// --')
@@ -42,6 +48,8 @@ class Line(object):
         """Removes "// " from the text."""
         if self.line.startswith('// '):
             return self.line[3:]
+        elif self.line.startswith('//'):
+            return self.line[2:]
         else:
             return self.line
 
@@ -63,6 +71,9 @@ class Line(object):
     def doc_line_with_tail(self) -> bool:
         return self.line.rstrip().endswith('-/')
 
+    def is_include_directive(self) -> bool:
+        return self.line.startswith('// ~see-file ')
+
 
 class TokenType(Enum):
     NONE = 0
@@ -72,6 +83,7 @@ class TokenType(Enum):
     SECTION_TEXT = 4
     CODE = 5
     EOF = 6
+    SEE_FILE = 7
 
 
 class Token(object):
@@ -147,10 +159,16 @@ class Tokenizer:
             return Token(TokenType.SECTION_DIVIDER, [rst_section],
                          self._line_number)
         elif l.starts_with_section_comment():
-            return Token(
-                TokenType.SECTION_TEXT,
-                [l.strip_comment_slashes()],
-                self._line_number)
+            if l.is_include_directive():
+                return Token(
+                        TokenType.SEE_FILE,
+                        [l.text()],
+                        self._line_number)
+            else:
+                return Token(
+                    TokenType.SECTION_TEXT,
+                    [l.strip_comment_slashes()],
+                    self._line_number)
         else:
             self._m = Mode.UNKNOWN_CODE
             self._text = []
@@ -222,7 +240,7 @@ class Tokenizer:
             return None
 
 
-def parse_source(lines: t.List[str]) -> t.List[Token]:
+def parse_source(lines: t.List[str], read_file: FileReader) -> t.List[Token]:
     tokens: t.List[Token] = []
 
     tokenizer = Tokenizer()
@@ -230,7 +248,15 @@ def parse_source(lines: t.List[str]) -> t.List[Token]:
     for line in lines:
         result = tokenizer.read(Line(line.rstrip()))
         if result:
-            tokens.append(result)
+            if result.type == TokenType.SEE_FILE:
+                matches = SEE_FILE_RE.match(result.text[0])
+                if matches:
+                    kwargs = common.parse_include_file_args(matches)
+                    other_file_lines, other_file_reader = read_file(
+                        **kwargs)
+                tokens += parse_source(other_file_lines, other_file_reader)
+            else:
+                tokens.append(result)
 
     tokens.append(Token(TokenType.EOF, []))
     return tokens
@@ -250,7 +276,7 @@ class SuperToken(object):
 
     def __init__(self,
                  type: SuperTokenType,
-                 text: str,
+                 text: t.List[str],
                  header: t.Optional[int],
                  line_number: int) -> None:
         self.type = type
@@ -299,7 +325,7 @@ def create_super_tokens(tokens: t.List[Token]) -> t.List[SuperToken]:
     section_text = TokenCombiner(SuperTokenType.SECTION_TEXT)
     code = TokenCombiner(SuperTokenType.CODE)
 
-    def finish_combiners():
+    def finish_combiners() -> None:
         st = section_text.create_super_token() or code.create_super_token()
         if st:
             result.append(st)
@@ -310,7 +336,8 @@ def create_super_tokens(tokens: t.List[Token]) -> t.List[SuperToken]:
         next_2 = tokens[i + 2] if i + 2 < len(tokens) else None
 
         if current_t.type == TokenType.SECTION_TEXT:
-            if (next_1.type == TokenType.SECTION_DIVIDER and
+            if (next_1 and next_2 and
+                next_1.type == TokenType.SECTION_DIVIDER and
                 next_2.type in [TokenType.SECTION_TEXT,
                                 TokenType.SECTION_DIVIDER]):
                 # We can only ever see one of these. Finish the combiners first
@@ -324,7 +351,7 @@ def create_super_tokens(tokens: t.List[Token]) -> t.List[SuperToken]:
                                          line_number=current_t.line_number))
             else:
                 section_text.add(current_t)
-                if next_1.type != TokenType.SECTION_TEXT:
+                if next_1 and next_1.type != TokenType.SECTION_TEXT:
                     finish_combiners()
         elif current_t.type == TokenType.CODE:
             code.add(current_t)
@@ -334,19 +361,19 @@ def create_super_tokens(tokens: t.List[Token]) -> t.List[SuperToken]:
     return result
 
 
-def read_source(lines: t.List[str]) -> t.List[SuperToken]:
-    tokens = parse_source(lines)
+def read_source(lines: t.List[str], reader: FileReader) -> t.List[SuperToken]:
+    tokens = parse_source(lines, reader)
     return create_super_tokens(tokens)
 
 
-def translate_cpp_file(
-        lines: t.List[str], section: t.Optional[str]) -> t.List[str]:
+def translate_cpp_file(lines: t.List[str], section: t.Optional[str],
+                       reader: FileReader) -> t.List[str]:
     if not section:
         header_depth = 0
     else:
         header_depth = HEADERS.index(section) + 1
 
-    tokens = read_source(lines)
+    tokens = read_source(lines, reader)
     output = []
     for token in tokens:
         if token.type == SuperTokenType.SECTION_HEADER:
@@ -355,6 +382,7 @@ def translate_cpp_file(
                 raise ValueError('Section header starting at line {} was '
                                  'malformed.'.format(token.line_number))
 
+            assert token.header is not None
             depth = token.header + header_depth
 
             header_char = HEADERS[depth % len(HEADERS)]

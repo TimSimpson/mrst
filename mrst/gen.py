@@ -6,10 +6,11 @@ import subprocess
 import tempfile
 import typing as t
 
+from . import common
 from . import cpp
 
 
-DUMPFILE_RE = re.compile('~dumpfile "([^"]*)" ?(.*)$')
+DUMPFILE_RE = re.compile(common.make_include_reg('~dumpfile'))
 
 
 def _call_pandoc(mark_down_abs_path: str, rst_abs_path: str) -> None:
@@ -31,13 +32,9 @@ def convert_md_to_rst(lines: t.List[str]) -> t.List[str]:
             return [l.rstrip() for l in r.readlines()]
 
 
-def _dump_file(input_file: str,
+def _read_file(input_file: str,
                start: t.Optional[int],
-               end: t.Optional[int],
-               indent: t.Optional[int],
-               section: t.Optional[str],
-               write_stream: t.TextIO) -> None:
-    print(f' ^---- dumpfile {input_file} {start} {end} {indent} {section}')
+               end: t.Optional[int]) -> t.List[str]:
     with open(input_file, 'r') as r:
         lines = r.readlines()
 
@@ -48,17 +45,42 @@ def _dump_file(input_file: str,
     else:
         subset = lines
 
+    return subset
+
+
+class FileReader:
+
+    def __init__(self, original: str) -> None:
+        self._current_source = original
+
+    def __call__(self, input_file: str) -> t.Tuple[t.List[str], t.Any]:
+        full_input_file = os.path.join(
+            os.path.dirname(self._current_source), input_file)
+        lines = _read_file(full_input_file, None, None)
+        return lines, FileReader(full_input_file)
+
+
+def _dump_file(input_file: str,
+               start: t.Optional[int],
+               end: t.Optional[int],
+               indent: t.Optional[int],
+               section: t.Optional[str],
+               write_stream: t.TextIO) -> None:
+    print(f' ^---- dumpfile {input_file} {start} {end} {indent} {section}')
+    lines = _read_file(input_file, start, end)
+
     if indent:
         prefix = ' ' * indent
     else:
         prefix = ''
 
     if input_file.endswith('.md'):
-        final_lines = convert_md_to_rst(subset)
+        final_lines = convert_md_to_rst(lines)
     elif input_file.endswith('.hpp') or input_file.endswith('.cpp'):
-        final_lines = cpp.translate_cpp_file(subset, section)
+        final_lines = cpp.translate_cpp_file(
+            lines, section, FileReader(input_file))
     else:
-        final_lines = [prefix + l.rstrip() for l in subset]
+        final_lines = [prefix + l.rstrip() for l in lines]
 
     write_stream.write('\n'.join(final_lines))
 
@@ -66,49 +88,11 @@ def _dump_file(input_file: str,
 def _dumpfile_directive(current_source: str,
                         matches: t.Match[str],
                         write_stream: t.TextIO) -> None:
-    input_file, rest = matches.groups()
-    args = rest.split(' ')
-    kwargs: t.Dict[str, t.Any] = {
-        'start': None,
-        'end': None,
-        'indent': None,
-        'section': None,
-    }
-    pos_arg_indices = ['start', 'end', 'indent']
-    pos_arg_index = 0
-    for arg in args:
-        if '=' in arg:
-            name, value = arg.split('=', 1)
-        else:
-            name = pos_arg_indices[pos_arg_index]
-            pos_arg_index += 1
-            value = arg
-
-        if name not in kwargs:
-            raise RuntimeError(
-                f'Unknown dumpfile arg: {name}')
-        if kwargs[name] is not None:
-            raise RuntimeError(
-                f'dumpfile arg {name} set twice')
-
-        kwargs[name] = value
-
-    if kwargs['end'] == '~':
-        kwargs['end'] = None
-
-    def intify(arg_name: str) -> None:
-        if kwargs[arg_name]:
-            kwargs[arg_name] = int(kwargs[arg_name])
-        else:
-            kwargs[arg_name] = 0
-
-    intify('start')
-    intify('end')
-    intify('indent')
+    kwargs = common.parse_include_file_args(matches)
 
     full_input_file = os.path.join(
-        os.path.dirname(current_source), input_file)
-    print(kwargs)
+        os.path.dirname(current_source), kwargs['input_file'])
+
     _dump_file(full_input_file, write_stream=write_stream, **kwargs)
 
 

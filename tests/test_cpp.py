@@ -4,16 +4,24 @@ import typing as t
 from mrst import cpp as cpp_mod
 
 
-def check_translation(
-        cpp: str, rst: str, section: t.Optional[str]=None) -> None:
-    output = cpp_mod.translate_cpp_file(cpp.split('\n'), section=section)
+def fake_reader(*_args, **_kwargs) -> t.Tuple[t.List[str], t.Any]:
+    raise AssertionError('Should not be called!')
+
+
+def check_translation(cpp: str,
+                      rst: str,
+                      section: t.Optional[str]=None,
+                      reader: t.Optional[cpp_mod.FileReader]=fake_reader,
+                      ) -> None:
+    output = cpp_mod.translate_cpp_file(
+        cpp.split('\n'), section=section, reader=reader)
     print(f'cpp={cpp}')
-    poo = '\n'.join(output)
-    print(f'rst={poo}')
+    formatted_rst = '\n'.join(output)
+    print(f'rst={formatted_rst}')
     assert '\n'.join(output) == rst
 
 
-def test_simple_big_section_header():
+def test_simple_big_section_header() -> None:
     check_translation(
         cpp=textwrap.dedent("""
             // --------------------------------------------------
@@ -73,7 +81,7 @@ def test_simple_big_section_header():
     )
 
 
-def test_section_is_obeyed():
+def test_section_is_obeyed() -> None:
     check_translation(
         section='~',
         cpp=textwrap.dedent("""
@@ -107,41 +115,7 @@ def test_section_is_obeyed():
     )
 
 
-def test_section_is_obeyed():
-    check_translation(
-        section='~',
-        cpp=textwrap.dedent("""
-            // --------------------------------------------------
-            // Big Header
-            // ==================================================
-            //       Desc
-            // --------------------------------------------------
-
-            #include "blahblahblah"
-
-            // --------------------------------------------------
-            // section 2
-            // --------------------------------------------------
-            //    Desc 2
-            // -------------------------------------------------/
-        """),
-        rst=textwrap.dedent("""
-            Big Header
-            ^^^^^^^^^^
-            Desc
-
-            .. code-block:: c++
-
-                #include "blahblahblah"
-
-            section 2
-            '''''''''
-            Desc 2
-        """).lstrip()
-    )
-
-
-def test_section_header_not_necessary():
+def test_section_header_not_necessary() -> None:
     check_translation(
         section='~',
         cpp=textwrap.dedent("""
@@ -163,7 +137,7 @@ def test_section_header_not_necessary():
     )
 
 
-def test_code_blocks_without_text():
+def test_code_blocks_without_text() -> None:
     check_translation(
         section='~',
         cpp=textwrap.dedent("""
@@ -189,5 +163,57 @@ def test_code_blocks_without_text():
             .. code-block:: c++
 
                 even more code
+        """).lstrip()
+    )
+
+
+def test_include_feature() -> None:
+    def file_reader(input_file: str, **_kwargs
+                    ) -> t.Tuple[t.List[str], t.Any]:
+        assert input_file == 'example_text.cpp'
+        return textwrap.dedent("""
+                // ~begin-doc
+                Thing thing;
+                thing += 5;
+                assert(thing.is_five());
+                // ~end-doc
+            """).split('\n'), file_reader
+
+    check_translation(
+        reader=file_reader,
+        cpp=textwrap.dedent("""
+            // --------------------------------------------------
+            // Thing class
+            // --------------------------------------------------
+            //      Oh baby, what a class this is. Let me tell
+            //      you. This is a great class.
+            // --------------------------------------------------
+            class Thing {};
+
+            // --------------------------------------------------
+            // The following example shows how to use the is_five
+            // function.
+            //
+            // ~see-file "example_text.cpp"
+            // -------------------------------------------------/
+        """),
+        rst=textwrap.dedent("""
+            Thing class
+            -----------
+            Oh baby, what a class this is. Let me tell
+            you. This is a great class.
+
+            .. code-block:: c++
+
+                class Thing {};
+
+            The following example shows how to use the is_five
+            function.
+
+            .. code-block:: c++
+
+                Thing thing;
+                thing += 5;
+                assert(thing.is_five());
         """).lstrip()
     )
