@@ -53,10 +53,15 @@ class FileReader:
     def __init__(self, original: str) -> None:
         self._current_source = original
 
-    def __call__(self, input_file: str) -> t.Tuple[t.List[str], t.Any]:
+    def __call__(self,
+                 input_file: str,
+                 start: t.Optional[int],
+                 end: t.Optional[int],
+                 **_kwargs: t.Any,
+                 ) -> t.Tuple[t.List[str], t.Any]:
         full_input_file = os.path.join(
             os.path.dirname(self._current_source), input_file)
-        lines = _read_file(full_input_file, None, None)
+        lines = _read_file(full_input_file, start, end)
         return lines, FileReader(full_input_file)
 
 
@@ -93,7 +98,8 @@ def _dumpfile_directive(current_source: str,
     full_input_file = os.path.join(
         os.path.dirname(current_source), kwargs['input_file'])
 
-    _dump_file(full_input_file, write_stream=write_stream, **kwargs)
+    kwargs['input_file'] = full_input_file
+    _dump_file(write_stream=write_stream, **kwargs)
 
 
 def parse_m_rst(source: str, dst: str) -> None:

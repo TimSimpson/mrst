@@ -119,6 +119,11 @@ class Tokenizer:
 
     def read(self, l: Line) -> t.Optional[Token]:
         self._line_number += 1
+        if l.is_include_directive():
+            return Token(
+                    TokenType.SEE_FILE,
+                    [l.text()],
+                    self._line_number)
         method_name = '_case_{}'.format(self._m.name.lower())
         method = getattr(self, method_name)
         if method is None:
@@ -159,16 +164,10 @@ class Tokenizer:
             return Token(TokenType.SECTION_DIVIDER, [rst_section],
                          self._line_number)
         elif l.starts_with_section_comment():
-            if l.is_include_directive():
-                return Token(
-                        TokenType.SEE_FILE,
-                        [l.text()],
-                        self._line_number)
-            else:
-                return Token(
-                    TokenType.SECTION_TEXT,
-                    [l.strip_comment_slashes()],
-                    self._line_number)
+            return Token(
+                TokenType.SECTION_TEXT,
+                [l.strip_comment_slashes()],
+                self._line_number)
         else:
             self._m = Mode.UNKNOWN_CODE
             self._text = []
