@@ -11,7 +11,7 @@ with open(os.path.join(ROOT, 'README.rst')) as file:
 
 setuptools.setup(
     name='mrst',
-    version='0.1.0',
+    version='0.2.0',
     description='Augments rst docs',
     long_description=description,
     author='Tim Simpson',
