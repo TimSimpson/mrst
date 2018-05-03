@@ -26,7 +26,7 @@ class Line(object):
         return 'class' in self.line
 
     def starts_with_section_comment(self) -> bool:
-        return self.line.startswith('// ') or self.line == '//'
+        return self.line.startswith('//')
 
     def starts_with_doc_line(self) -> bool:
         return self.line.startswith('// --')

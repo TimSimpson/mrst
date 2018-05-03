@@ -17,4 +17,7 @@ setuptools.setup(
     author='Tim Simpson',
     license='MIT',
     py_modules=['mrst'],
+    entry_points = {
+        'console_scripts': ['mrst=mrst.cli:main'],
+    }
 )

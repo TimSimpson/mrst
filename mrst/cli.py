@@ -24,7 +24,7 @@ def run(args: t.List[str]) -> int:
 
 
 def main() -> None:
-    exit(run(sys.argv))
+    exit(run(sys.argv[1:]))
 
 
 if __name__ == "__main__":
