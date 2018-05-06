@@ -34,14 +34,36 @@ def convert_md_to_rst(lines: t.List[str]) -> t.List[str]:
 
 def _read_file(input_file: str,
                start: t.Optional[int],
-               end: t.Optional[int]) -> t.List[str]:
+               end: t.Optional[int],
+               start_after: t.Optional[str]=None,
+               end_before: t.Optional[str]=None) -> t.List[str]:
     with open(input_file, 'r') as r:
         lines = r.readlines()
+
+    if start_after:
+        if start is not None:
+            raise ValueError(
+                '"start_after" and "start" arguments are mutually exclusive')
+        else:
+            for i, line in enumerate(lines):
+                if line.startswith(start_after):
+                    start = i + 1
+
+    if end_before:
+        if end is not None:
+            raise ValueError(
+                '"end_before" and "end" arguments are mutually exclusive')
+        else:
+            for i, line in enumerate(lines):
+                if line.startswith(end_before):
+                    end = i
 
     if start and end:
         subset = lines[start: end]
     elif start:
         subset = lines[start:]
+    elif end:
+        subset = lines[:end]
     else:
         subset = lines
 
@@ -70,9 +92,12 @@ def _dump_file(input_file: str,
                end: t.Optional[int],
                indent: t.Optional[int],
                section: t.Optional[str],
+               start_after: t.Optional[str],
+               end_before: t.Optional[str],
                write_stream: t.TextIO) -> None:
     print(f' ^---- dumpfile {input_file} {start} {end} {indent} {section}')
-    lines = _read_file(input_file, start, end)
+    lines = _read_file(
+        input_file, start, end, start_after=start_after, end_before=end_before)
 
     if indent:
         prefix = ' ' * indent
@@ -91,7 +116,7 @@ def _dump_file(input_file: str,
 
 
 def _dumpfile_directive(current_source: str,
-                        matches: t.Match[str],
+                        matches: str,
                         write_stream: t.TextIO) -> None:
     kwargs = common.parse_include_file_args(matches)
 
@@ -106,9 +131,8 @@ def parse_m_rst(source: str, dst: str) -> None:
     with open(dst, 'w') as w:
         with open(source, 'r') as f:
             for line in f.readlines():
-                matches = DUMPFILE_RE.match(line)
-                if matches:
-                    _dumpfile_directive(source, matches, w)
+                if line.startswith('~dumpfile '):
+                    _dumpfile_directive(source, line[10:], w)
                 else:
                     w.write(f'{line}')
 

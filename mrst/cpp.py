@@ -248,11 +248,9 @@ def parse_source(lines: t.List[str], read_file: FileReader) -> t.List[Token]:
         result = tokenizer.read(Line(line.rstrip()))
         if result:
             if result.type == TokenType.SEE_FILE:
-                matches = SEE_FILE_RE.match(result.text[0])
-                if matches:
-                    kwargs = common.parse_include_file_args(matches)
-                    other_file_lines, other_file_reader = read_file(
-                        **kwargs)
+                kwargs = common.parse_include_file_args(result.text[0][12:])
+                other_file_lines, other_file_reader = read_file(
+                    **kwargs)
                 tokens += parse_source(other_file_lines, other_file_reader)
             else:
                 tokens.append(result)
