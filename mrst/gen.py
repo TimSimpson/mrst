@@ -1,3 +1,4 @@
+import datetime
 import glob
 import os
 import re
@@ -134,6 +135,17 @@ def parse_m_rst(source: str, dst: str) -> None:
                 if line.startswith('~dumpfile '):
                     _dumpfile_directive(source, line[10:], w)
                 else:
+                    if '~~current-time~~' in line:
+                        line = line.replace('~~current-time~~',
+                                            str(datetime.datetime.now()))
+                    if '~~git-commit~~' in line:
+                        sha = subprocess.check_output(
+                            'git rev-parse HEAD',
+                            shell=True,
+                            cwd=os.path.dirname(source)
+                        )
+                        line = line.replace('~~git-commit~~',
+                                            sha.decode('utf-8'))
                     w.write(f'{line}')
 
 
