@@ -23,3 +23,7 @@ def main() -> None:
             print("FAILED!")
             sys.exit(result)
     print("OK!")
+
+
+if __name__ == "__main__":
+    main()

@@ -8,4 +8,4 @@ install:
   - poetry install
 
 script:
-  - poetry run tests
+  - poetry run python run_tests.py
