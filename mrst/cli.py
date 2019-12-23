@@ -8,7 +8,9 @@ from . import gen
 
 def run(args: t.List[str]) -> int:
     parser = argparse.ArgumentParser("Generates Rst files")
-    parser.add_argument("--source", default=None, type=str, help="source directory")
+    parser.add_argument(
+        "--source", default=None, type=str, help="source directory"
+    )
     parser.add_argument(
         "--output",
         default=None,

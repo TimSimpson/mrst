@@ -81,7 +81,9 @@ def parse_include_file_args(input: str) -> dict:
                     f"Line: {input}"
                 )
             if pos_arg_index >= len(pos_arg_indices):
-                raise RuntimeError(f'Positional argument not expected: "{args[index]}"')
+                raise RuntimeError(
+                    f'Positional argument not expected: "{args[index]}"'
+                )
             kwargs[pos_arg_indices[pos_arg_index]] = args[index]
             pos_arg_index += 1
             index += 1

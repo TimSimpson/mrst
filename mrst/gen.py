@@ -57,7 +57,9 @@ def _read_file(
 
     if end_before:
         if end is not None:
-            raise ValueError('"end_before" and "end" arguments are mutually exclusive')
+            raise ValueError(
+                '"end_before" and "end" arguments are mutually exclusive'
+            )
         else:
             for i, line in enumerate(lines):
                 if line.startswith(end_before):
@@ -116,7 +118,9 @@ def _dump_file(
     if input_file.endswith(".md"):
         final_lines = convert_md_to_rst(lines)
     elif input_file.endswith(".hpp") or input_file.endswith(".cpp"):
-        final_lines = cpp.translate_cpp_file(lines, section, FileReader(input_file))
+        final_lines = cpp.translate_cpp_file(
+            lines, section, FileReader(input_file)
+        )
     else:
         final_lines = [prefix + l.rstrip() for l in lines]
 
@@ -153,7 +157,9 @@ def parse_m_rst(source: str, dst: str) -> None:
                             shell=True,
                             cwd=os.path.dirname(source),
                         )
-                        line = line.replace("~~git-commit~~", sha.decode("utf-8"))
+                        line = line.replace(
+                            "~~git-commit~~", sha.decode("utf-8")
+                        )
                     w.write(f"{line}")
 
 

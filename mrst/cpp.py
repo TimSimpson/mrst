@@ -160,10 +160,14 @@ class Tokenizer:
             if l.doc_line_with_tail():
                 self._m = Mode.OUTER_SPACE
                 self._text = []
-            return Token(TokenType.SECTION_DIVIDER, [rst_section], self._line_number)
+            return Token(
+                TokenType.SECTION_DIVIDER, [rst_section], self._line_number
+            )
         elif l.starts_with_section_comment():
             return Token(
-                TokenType.SECTION_TEXT, [l.strip_comment_slashes()], self._line_number
+                TokenType.SECTION_TEXT,
+                [l.strip_comment_slashes()],
+                self._line_number,
             )
         else:
             self._m = Mode.UNKNOWN_CODE
@@ -335,7 +339,8 @@ def create_super_tokens(tokens: t.List[Token]) -> t.List[SuperToken]:
                 next_1
                 and next_2
                 and next_1.type == TokenType.SECTION_DIVIDER
-                and next_2.type in [TokenType.SECTION_TEXT, TokenType.SECTION_DIVIDER]
+                and next_2.type
+                in [TokenType.SECTION_TEXT, TokenType.SECTION_DIVIDER]
             ):
                 # We can only ever see one of these. Finish the combiners first
                 finish_combiners()
