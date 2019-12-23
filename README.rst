@@ -1,6 +1,9 @@
 M Rst
 =======
 
+.. image:: https://travis-ci.org/TimSimpson/mrst.svg?branch=master
+    :target: https://travis-ci.org/TimSimpson/mrst
+
 M. Rst makes it possible to avoid duplicating the docs you already have in C++ source files (such as header files making up your project's interface or .cpp files used for example code) or in Markdown files (which are preferable to .rst when repositories are being viewed in GitHub).
 
 It does this by processing special ``.mrst`` files containing Ms. Rst directives and generating a new directory full of plain ReStructured Text files to be used by Sphinx.
