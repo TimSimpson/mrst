@@ -3,8 +3,8 @@ import subprocess
 from . import gen
 
 
-def sphinx_build(config: gen.Config, op: str='html') -> int:
-    cmd = f'sphinx-build -M {op} {config.gen_source_dir} {config.build_dir}'
+def sphinx_build(config: gen.Config, op: str = "html") -> int:
+    cmd = f"sphinx-build -M {op} {config.gen_source_dir} {config.build_dir}"
     return subprocess.call(cmd, shell=True)
 
 

@@ -1,7 +1,7 @@
-Ms. Rst
+M Rst
 =======
 
-Ms. Rst makes it possible to avoid duplicating the docs you already have in C++ source files (such as header files making up your project's interface or .cpp files used for example code) or in Markdown files (which are preferable to .rst when repositories are being viewed in GitHub).
+M. Rst makes it possible to avoid duplicating the docs you already have in C++ source files (such as header files making up your project's interface or .cpp files used for example code) or in Markdown files (which are preferable to .rst when repositories are being viewed in GitHub).
 
 It does this by processing special ``.mrst`` files containing Ms. Rst directives and generating a new directory full of plain ReStructured Text files to be used by Sphinx.
 
@@ -26,7 +26,7 @@ Throw that make file in the trash, and add a ``Pipfile`` with the following:
     python_version = ">= 3.6.0"
 
     [packages]
-    msrst = "*"
+    mrst = "*"
     Sphinx = "*"
     typing = "*"
 

@@ -8,10 +8,10 @@ from . import common
 # In rst, you can pick whatever char you want for section headers.
 # but this list is what appeared in the docs, and is what pandoc uses when
 # converting from MarkDown, so it looks like it has to be the standard.
-HEADERS_STR = '=-~^\'`'
+HEADERS_STR = "=-~^'`"
 HEADERS = list(HEADERS_STR)
 
-SEE_FILE_RE = re.compile(common.make_include_reg('// ~see-file'))
+SEE_FILE_RE = re.compile(common.make_include_reg("// ~see-file"))
 
 FileReader = t.Callable[..., t.Tuple[t.List[str], t.Any]]
 
@@ -23,19 +23,21 @@ class Line(object):
         self.line = line
 
     def class_keyword(self) -> bool:
-        return 'class' in self.line
+        return "class" in self.line
 
     def starts_with_section_comment(self) -> bool:
-        return self.line.startswith('//')
+        return self.line.startswith("//")
 
     def starts_with_doc_line(self) -> bool:
-        return self.line.startswith('// --')
+        return self.line.startswith("// --")
 
     def starts_with_rst_section_underline(self) -> t.Optional[str]:
-        if (len(self.line) > 4 and
-                self.line.startswith('// ') and
-                self.line[3] == self.line[4] and
-                self.line[3] in HEADERS_STR):
+        if (
+            len(self.line) > 4
+            and self.line.startswith("// ")
+            and self.line[3] == self.line[4]
+            and self.line[3] in HEADERS_STR
+        ):
             return self.line[3]
         else:
             return None
@@ -46,9 +48,9 @@ class Line(object):
 
     def strip_comment_slashes(self) -> str:
         """Removes "// " from the text."""
-        if self.line.startswith('// '):
+        if self.line.startswith("// "):
             return self.line[3:]
-        elif self.line.startswith('//'):
+        elif self.line.startswith("//"):
             return self.line[2:]
         else:
             return self.line
@@ -59,20 +61,20 @@ class Line(object):
 
     def end_class_marker(self) -> bool:
         """Special }; at start of line."""
-        return self.line.strip().startswith('};')
+        return self.line.strip().startswith("};")
 
     def begin_marker(self) -> bool:
-        return self.line.startswith('// ~begin-doc')
+        return self.line.startswith("// ~begin-doc")
 
     def end_marker(self) -> bool:
         """Has "// end-doc" """
-        return self.line.startswith('// ~end-doc')
+        return self.line.startswith("// ~end-doc")
 
     def doc_line_with_tail(self) -> bool:
-        return self.line.rstrip().endswith('-/')
+        return self.line.rstrip().endswith("-/")
 
     def is_include_directive(self) -> bool:
-        return self.line.startswith('// ~see-file ')
+        return self.line.startswith("// ~see-file ")
 
 
 class TokenType(Enum):
@@ -87,11 +89,12 @@ class TokenType(Enum):
 
 
 class Token(object):
-
-    def __init__(self,
-                 type: TokenType=TokenType.NONE,
-                 text: t.List[str]=None,
-                 line_number: int=0) -> None:
+    def __init__(
+        self,
+        type: TokenType = TokenType.NONE,
+        text: t.List[str] = None,
+        line_number: int = 0,
+    ) -> None:
         self.type = type
         self.text = text or []
         self.line_number = line_number
@@ -109,7 +112,6 @@ class Mode(Enum):
 
 
 class Tokenizer:
-
     def __init__(self) -> None:
         self._line_number = 0
         self._m = Mode.OUTER_SPACE
@@ -120,14 +122,11 @@ class Tokenizer:
     def read(self, l: Line) -> t.Optional[Token]:
         self._line_number += 1
         if l.is_include_directive():
-            return Token(
-                    TokenType.SEE_FILE,
-                    [l.text()],
-                    self._line_number)
-        method_name = '_case_{}'.format(self._m.name.lower())
+            return Token(TokenType.SEE_FILE, [l.text()], self._line_number)
+        method_name = "_case_{}".format(self._m.name.lower())
         method = getattr(self, method_name)
         if method is None:
-            raise ValueError('Unhandled Mode! {}'.format(method_name))
+            raise ValueError("Unhandled Mode! {}".format(method_name))
 
         return method(l)
 
@@ -161,13 +160,11 @@ class Tokenizer:
             if l.doc_line_with_tail():
                 self._m = Mode.OUTER_SPACE
                 self._text = []
-            return Token(TokenType.SECTION_DIVIDER, [rst_section],
-                         self._line_number)
+            return Token(TokenType.SECTION_DIVIDER, [rst_section], self._line_number)
         elif l.starts_with_section_comment():
             return Token(
-                TokenType.SECTION_TEXT,
-                [l.strip_comment_slashes()],
-                self._line_number)
+                TokenType.SECTION_TEXT, [l.strip_comment_slashes()], self._line_number
+            )
         else:
             self._m = Mode.UNKNOWN_CODE
             self._text = []
@@ -207,20 +204,19 @@ class Tokenizer:
             self._m = Mode.CLASS_CODE
         else:
             self._m = Mode.NONCLASS_CODE
-        self._text.append('    {}'.format(l.text()))
+        self._text.append("    {}".format(l.text()))
         return None
 
     def _case_class_code(self, l: Line) -> t.Optional[Token]:
         if l.end_class_marker():
-            self._text.append('    {}'.format(l.text()))
+            self._text.append("    {}".format(l.text()))
             self._m = Mode.OUTER_SPACE
             t = Token(TokenType.CODE, self._text, self._line_number)
             self._text = []
             return t
         return self._case_nonclass_code(l)
 
-    def _case_nonclass_code(
-            self, l: Line) -> t.Optional[Token]:
+    def _case_nonclass_code(self, l: Line) -> t.Optional[Token]:
         if l.end_marker():
             self._m = Mode.OUTER_SPACE
             t = Token(TokenType.CODE, self._text, self._line_number)
@@ -233,9 +229,9 @@ class Tokenizer:
             return t
         else:
             if len(l.text()) > 0:
-                self._text.append('    {}'.format(l.text()))
+                self._text.append("    {}".format(l.text()))
             else:
-                self._text.append('')
+                self._text.append("")
             return None
 
 
@@ -249,8 +245,7 @@ def parse_source(lines: t.List[str], read_file: FileReader) -> t.List[Token]:
         if result:
             if result.type == TokenType.SEE_FILE:
                 kwargs = common.parse_include_file_args(result.text[0][12:])
-                other_file_lines, other_file_reader = read_file(
-                    **kwargs)
+                other_file_lines, other_file_reader = read_file(**kwargs)
                 tokens += parse_source(other_file_lines, other_file_reader)
             else:
                 tokens.append(result)
@@ -271,11 +266,13 @@ class SuperToken(object):
     Only has the headers, text, and code blocks.
     """
 
-    def __init__(self,
-                 type: SuperTokenType,
-                 text: t.List[str],
-                 header: t.Optional[int],
-                 line_number: int) -> None:
+    def __init__(
+        self,
+        type: SuperTokenType,
+        text: t.List[str],
+        header: t.Optional[int],
+        line_number: int,
+    ) -> None:
         self.type = type
         self.text = text or []
         self.header = header
@@ -283,7 +280,6 @@ class SuperToken(object):
 
 
 class TokenCombiner:
-
     def __init__(self, token_type: SuperTokenType) -> None:
         self._tokens: t.List[Token] = []
         self._token_type = token_type
@@ -306,12 +302,14 @@ class TokenCombiner:
 
         # This is probably going to slow things down, so figure out something
         # else soon.
-        dedent_text = textwrap.dedent('\n'.join(all_text)).strip().split('\n')
+        dedent_text = textwrap.dedent("\n".join(all_text)).strip().split("\n")
 
-        result = SuperToken(self._token_type,
-                            dedent_text,
-                            header=None,
-                            line_number=self._tokens[0].line_number)
+        result = SuperToken(
+            self._token_type,
+            dedent_text,
+            header=None,
+            line_number=self._tokens[0].line_number,
+        )
         self._tokens = []
         return result
 
@@ -333,19 +331,25 @@ def create_super_tokens(tokens: t.List[Token]) -> t.List[SuperToken]:
         next_2 = tokens[i + 2] if i + 2 < len(tokens) else None
 
         if current_t.type == TokenType.SECTION_TEXT:
-            if (next_1 and next_2 and
-                next_1.type == TokenType.SECTION_DIVIDER and
-                next_2.type in [TokenType.SECTION_TEXT,
-                                TokenType.SECTION_DIVIDER]):
+            if (
+                next_1
+                and next_2
+                and next_1.type == TokenType.SECTION_DIVIDER
+                and next_2.type in [TokenType.SECTION_TEXT, TokenType.SECTION_DIVIDER]
+            ):
                 # We can only ever see one of these. Finish the combiners first
                 finish_combiners()
                 # then create a header token
                 header_char = next_1.text[0][0]
                 header_depth = HEADERS_STR.index(header_char)
-                result.append(SuperToken(SuperTokenType.SECTION_HEADER,
-                                         current_t.text,
-                                         header=header_depth,
-                                         line_number=current_t.line_number))
+                result.append(
+                    SuperToken(
+                        SuperTokenType.SECTION_HEADER,
+                        current_t.text,
+                        header=header_depth,
+                        line_number=current_t.line_number,
+                    )
+                )
             else:
                 section_text.add(current_t)
                 if next_1 and next_1.type != TokenType.SECTION_TEXT:
@@ -363,8 +367,9 @@ def read_source(lines: t.List[str], reader: FileReader) -> t.List[SuperToken]:
     return create_super_tokens(tokens)
 
 
-def translate_cpp_file(lines: t.List[str], section: t.Optional[str],
-                       reader: FileReader) -> t.List[str]:
+def translate_cpp_file(
+    lines: t.List[str], section: t.Optional[str], reader: FileReader
+) -> t.List[str]:
     if not section:
         header_depth = 0
     else:
@@ -376,8 +381,10 @@ def translate_cpp_file(lines: t.List[str], section: t.Optional[str],
         if token.type == SuperTokenType.SECTION_HEADER:
             if len(token.text) != 1:
                 # Looked like a section header, but it wasn't!
-                raise ValueError('Section header starting at line {} was '
-                                 'malformed.'.format(token.line_number))
+                raise ValueError(
+                    "Section header starting at line {} was "
+                    "malformed.".format(token.line_number)
+                )
 
             assert token.header is not None
             depth = token.header + header_depth
@@ -387,16 +394,16 @@ def translate_cpp_file(lines: t.List[str], section: t.Optional[str],
             output.append(header_char * len(token.text[0].rstrip()))
         elif token.type == SuperTokenType.SECTION_TEXT:
             output += token.text
-            output.append('')
+            output.append("")
         elif token.type == SuperTokenType.CODE:
-            output.append('.. code-block:: c++\n')
+            output.append(".. code-block:: c++\n")
 
             for cl in token.text:
-                cl_lines = cl.split('\n')
+                cl_lines = cl.split("\n")
                 for cl_line in cl_lines:
-                    output.append(f'    {cl_line}'.rstrip())
-            output.append('')
+                    output.append(f"    {cl_line}".rstrip())
+            output.append("")
         else:
-            raise AssertionError('Unexpected case: {}'.format(token.type))
+            raise AssertionError("Unexpected case: {}".format(token.type))
 
     return output
