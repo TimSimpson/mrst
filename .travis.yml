@@ -1,7 +1,11 @@
-language: python3.6
+language: python
+python: 3.6
+
+before_install:
+  - pip install poetry
 
 install:
-  - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-  - $HOME/.poetry/bin/poetry install
+  - poetry install
+
 script:
-  - $HOME/.poetry/bin/poetry run tests
+  - poetry run tests
