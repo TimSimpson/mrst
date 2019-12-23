@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mrst"
-version = "0.5.2"
+version = "0.5.3"
 description = ""
 authors = ["Tim Simpson <timsimpson4@gmail.com>"]
 
