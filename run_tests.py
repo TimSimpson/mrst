@@ -9,7 +9,7 @@ mrst_path = this_file.parent / "mrst"
 all_py_files = f"'{mrst_path}' '{tests_path}' '{this_file}'"
 
 
-def main():
+def main() -> None:
     cmds = [
         f"black {all_py_files}",
         f"flake8 {all_py_files} --ignore E203,E266,E501,W503,E231",

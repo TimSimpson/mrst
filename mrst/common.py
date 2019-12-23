@@ -1,4 +1,19 @@
 import typing as t
+import typing_extensions as te
+
+
+IncludeFileArgs = te.TypedDict(
+    "IncludeFileArgs",
+    {
+        "input_file": str,
+        "start": t.Optional[int],
+        "end": t.Optional[int],
+        "indent": t.Optional[int],
+        "section": t.Optional[str],
+        "start_after": t.Optional[str],
+        "end_before": t.Optional[str],
+    },
+)
 
 
 def make_include_reg(prefix: str) -> str:
@@ -38,14 +53,14 @@ def _split_args(args: str) -> t.List[str]:
     return result
 
 
-def parse_include_file_args(input: str) -> dict:
+def parse_include_file_args(input: str) -> IncludeFileArgs:
     # rest = matches.groups()
     args = _split_args(input.strip())
     if len(args) < 1:
         raise ValueError("Expected at least one arg.")
     print(f"args={args}")
-    kwargs: t.Dict[str, t.Any] = {
-        "input_file": args[0],
+    input_file = args[0]
+    kwargs: t.Dict[str, t.Optional[str]] = {
         "start": None,
         "end": None,
         "indent": None,
@@ -88,15 +103,18 @@ def parse_include_file_args(input: str) -> dict:
             pos_arg_index += 1
             index += 1
 
-    def intify(arg_name: str) -> None:
-        if kwargs[arg_name]:
-            if kwargs[arg_name] is None or kwargs[arg_name] == "~":
-                kwargs[arg_name] = None
-            else:
-                kwargs[arg_name] = int(kwargs[arg_name])
+    def intify(arg_value: t.Optional[str]) -> t.Optional[int]:
+        if (not arg_value) or arg_value == "~":
+            return None
+        else:
+            return int(arg_value)
 
-    intify("start")
-    intify("end")
-    intify("indent")
-
-    return kwargs
+    return {
+        "input_file": input_file,
+        "start": intify(kwargs["start"]),
+        "end": intify(kwargs["end"]),
+        "indent": intify(kwargs["indent"]),
+        "section": kwargs["section"],
+        "start_after": kwargs["start_after"],
+        "end_before": kwargs["end_before"],
+    }

@@ -4,7 +4,7 @@ import typing as t
 from mrst import cpp as cpp_mod
 
 
-def fake_reader(*_args, **_kwargs) -> t.Tuple[t.List[str], t.Any]:
+def fake_reader(*_args: t.Any, **_kwargs: t.Any) -> t.Tuple[t.List[str], t.Any]:
     raise AssertionError("Should not be called!")
 
 
@@ -12,7 +12,7 @@ def check_translation(
     cpp: str,
     rst: str,
     section: t.Optional[str] = None,
-    reader: t.Optional[cpp_mod.FileReader] = fake_reader,
+    reader: cpp_mod.FileReader = fake_reader,
 ) -> None:
     output = cpp_mod.translate_cpp_file(
         cpp.split("\n"), section=section, reader=reader
@@ -186,7 +186,9 @@ def test_code_blocks_without_text() -> None:
 
 
 def test_include_feature() -> None:
-    def file_reader(input_file: str, **_kwargs) -> t.Tuple[t.List[str], t.Any]:
+    def file_reader(
+        input_file: str, **_kwargs: t.Any
+    ) -> t.Tuple[t.List[str], t.Any]:
         assert input_file == "example_text.cpp"
         return (
             textwrap.dedent(

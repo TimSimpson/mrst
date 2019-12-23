@@ -124,7 +124,9 @@ class Tokenizer:
         if l.is_include_directive():
             return Token(TokenType.SEE_FILE, [l.text()], self._line_number)
         method_name = "_case_{}".format(self._m.name.lower())
-        method = getattr(self, method_name)
+        method = t.cast(
+            t.Callable[[Line], t.Optional[Token]], getattr(self, method_name)
+        )
         if method is None:
             raise ValueError("Unhandled Mode! {}".format(method_name))
 
@@ -133,11 +135,11 @@ class Tokenizer:
     def _case_outer_space(self, l: Line) -> t.Optional[Token]:
         if l.starts_with_doc_line():
             self._m = Mode.SECTION_TEXT
-            self._text: t.List[str] = []
+            self._text = []
             return Token(TokenType.SECTION_START, None, self._line_number)
         elif l.begin_marker():
             self._m = Mode.UNKNOWN_CODE
-            self._text: t.List[str] = []
+            self._text = []
         return None
 
     # def _case_section_header(self,
