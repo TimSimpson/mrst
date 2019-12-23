@@ -4,7 +4,7 @@ M Rst
 .. image:: https://travis-ci.org/TimSimpson/mrst.svg?branch=master
     :target: https://travis-ci.org/TimSimpson/mrst
 
-M. Rst makes it possible to avoid duplicating the docs you already have in C++ source files (such as header files making up your project's interface or .cpp files used for example code) or in Markdown files (which are preferable to .rst when repositories are being viewed in GitHub).
+M Rst makes it possible to avoid duplicating the docs you already have in C++ source files (such as header files making up your project's interface or .cpp files used for example code) or in Markdown files (which are preferable to .rst when repositories are being viewed in GitHub).
 
 It does this by processing special ``.mrst`` files containing Ms. Rst directives and generating a new directory full of plain ReStructured Text files to be used by Sphinx.
 
@@ -16,29 +16,13 @@ First off, this requires ``pandoc`` (the CLI program, not any Python libs you ma
 
 Take a typical Sphinx project, which will consist of a ``source`` directory and a Make file.
 
-Throw that make file in the trash, and add a ``Pipfile`` with the following:
+Using something like `pipx <https://pipxproject.github.io/pipx/>`_ install mrst.
 
-.. code-block:: ini
-
-    [[source]]
-    url = 'https://pypi.python.org/simple'
-    verify_ssl = true
-    name = 'pypi'
-
-    [requires]
-    python_version = ">= 3.6.0"
-
-    [packages]
-    mrst = "*"
-    Sphinx = "*"
-    typing = "*"
-
-From now one instead of using the make file to build sphinx docs, use:
+Instead of using the make file to build sphinx docs, use:
 
 .. code-block:: bash
 
-    pipenv install  # do this once
-    pipenv run mrst build
+    mrst build
 
 ``mrst`` will invoke Sphinx for you. To avoid this and just generate the intermediate project, run ``pipenv run mrst gen``.
 
