@@ -7,7 +7,6 @@ authors = ["Tim Simpson <timsimpson4@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.6"
 typing-extensions = "^3.7.4"
-Sphinx = "^2.3.1"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
