@@ -9,32 +9,36 @@ M Rst makes it possible to avoid duplicating the docs you already have in C++ so
 It does this by processing special ``.mrst`` files containing Ms. Rst directives and generating a new directory full of plain ReStructured Text files to be used by Sphinx.
 
 
-How it run it
+How to run it
 -------------
 
-First off, this requires ``pandoc`` (the CLI program, not any Python libs you may find on PyPi). You'll need to install that and make it available on your path somehow (or just avoid Markdown files).
+First, make sure the following programs are on your path:
 
-Take a typical Sphinx project, which will consist of a ``source`` directory and a Make file.
+* `pandoc<https://pandoc.org>`_ - the `CLI tool<https://pandoc.org/installing.html>`_ , not any Python libs you may find on PyPi
 
-Using something like `pipx <https://pipxproject.github.io/pipx/>`_ install mrst.
+* `Sphinx<https://www.sphinx-doc.org/en/master/>`_ - specifically "sphinx-build". You can install this using `pipx<https://pipxproject.github.io/pipx/>`_ with ``pipx install Sphinx``
 
-Instead of using the make file to build sphinx docs, use:
+* mrst - this project. You can install this using `pipx<https://pipxproject.github.io/pipx/>`_ with ``pipx install mrst``
+
+Now, take a typical Sphinx project, which will consist of a source directory and a Make file.
+
+Open up the ``conf.py`` file used by Sphinx (it's in your source directory) and change the variable ``source_suffix`` by appending ``.mrst`` to the list.
+
+Now, instead of using the make file to build sphinx docs, run this:
 
 .. code-block:: bash
 
-    mrst build
+    mrst --source source --output output
 
-``mrst`` will invoke Sphinx for you. To avoid this and just generate the intermediate project, run ``pipenv run mrst gen``.
+``mrst`` will invoke Sphinx for you. To avoid this and just generate the intermediate project, add the flag ``--skip-sphix``.
 
 By default, all docs in ``source`` gets copied into ``output/gen`` which is will then be used by Sphinx (Sphinx will put it's output in ``output/build``).
-
-Finally, change the ``conf.py`` used by Sphinx (it's in your source directory) where it says ``source_suffix`` to include ``.mrst``.
 
 
 Using Mrst Files
 ----------------
 
-Files ending with ``mrst`` stand for Ms. ReStructured Text. Like Ms. Pacman, it's better than the original. There's a custom parser for them which writes them to the generated doc directory.
+Files ending with ``mrst`` stand for M ReStructured Text. There's a custom parser for them which writes them to the generated doc directory.
 
 These files are just like ``mrst`` files but with the ``~dumpfile`` directive which takes a relative file and includes it inside of the original document.
 
@@ -97,11 +101,13 @@ The parser reads C++ code and ignores everything until it sees special comment s
 
     // ---------------------------------------------
 
-The important bit is that there are two slashes, a space, and then at least two hyphens.
+The important bit is that there are two slashes, a space, and then at least two hyphens (in other words, ``// --``).
 
 Everything after that is included in the rst file until it sees another similar line.
 
 Here's an example:
+
+.. code-block:: c++
 
     // --------------------------------------------
     // Section Header
@@ -211,7 +217,7 @@ Here's an example of a class being included in rst:
         virtual const char * get_name() const;
         virtual const int priority() const;
     };
-    // end-doc
+    // ~end-doc
 
 the above turns into:
 
@@ -222,21 +228,21 @@ the above turns into:
     A platform for renderers.
     Note how this text will get de-dented.
 
-.. code-block:: c++
+    .. code-block:: c++
 
-       class RenderPlatform {
-        public:
-            virtual ~RenderPlatform();
-            virtual const char * get_name() const;
-            virtual const int priority() const;
-        };
+           class RenderPlatform {
+            public:
+                virtual ~RenderPlatform();
+                virtual const char * get_name() const;
+                virtual const int priority() const;
+            };
 
 Section headers
 ~~~~~~~~~~~~~~~
 
 When parsing C++ files it's sometimes necessary to tell the C++ to rst generator what section header the incoming dumped rst should be nested under. The expected order of the section headers can be found in the `HEADERS` var defined in cpp_rst.py (note: Sphinx lets you use an arbitrary order, but you have to use the same order mrst uses in order to chnage the section headers found in C++ files).
 
-Let's say you want to the documentation in a header file to appear under an existing section header in your rst file. You'd do this:
+Let's say you want the documentation in a header file to appear under an existing section header in your rst file. You'd do this:
 
 .. code-block:: rst
 
