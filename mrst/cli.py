@@ -26,14 +26,14 @@ def run(args: t.List[str]) -> int:
     p_args = parser.parse_args(args)
 
     cfg = gen.Config(p_args.source, p_args.output)
-    if p_args.no_sphinx:
+    if p_args.skip_sphinx:
         return gen.generate(cfg)
     else:
         return build.build(cfg)
 
 
 def main() -> None:
-    exit(run(sys.argv[1:]))
+    sys.exit(run(sys.argv[1:]))
 
 
 if __name__ == "__main__":
