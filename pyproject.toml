@@ -5,7 +5,7 @@ description = ""
 authors = ["Tim Simpson <timsimpson4@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.5"
 typing-extensions = "^3.7.4"
 
 [tool.poetry.dev-dependencies]
